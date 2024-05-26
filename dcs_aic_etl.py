@@ -65,9 +65,10 @@ df = pd.DataFrame(data)
 df['northing_dd'] = df['northing'].apply(dms_to_dd)
 df['easting_dd'] = df['easting'].apply(dms_to_dd)
 
-
 df_blue = df[df['coalition'] == 'blue']
 df_red = df[df['coalition'] == 'red']
+
+# TODO filter blue df based on who has checked in - implement function for updating that list somewhere else
 
 # Create a Cartesian product of the blue and red DataFrames
 df_cartesian = pd.merge(df_blue.assign(key=1), df_red.assign(key=1), on='key', suffixes=('_from', '_to'))
