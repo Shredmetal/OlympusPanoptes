@@ -13,12 +13,13 @@ object OlympusPanoptes extends App {
 
   // Initialize Spark Session
   val spark = SparkSession.builder
-    .appName("AirInterceptController")
+    .appName("OlympusPanoptes")
     .master("local[*]")
     .getOrCreate()
 
   import spark.implicits._
 
+  // Might need to swap over to datasets API for performance, at which point this will go into a utils file as a case class
   // Define schema for JSON data
   val schema = new StructType()
     .add("coalition", StringType)
@@ -108,19 +109,19 @@ object OlympusPanoptes extends App {
   // Read JSON data as streaming source
   val inputDF = spark.readStream
     .schema(schema)
-    .json("path/to/json/files")
+    .json("path to some json file with all the aircraft data")
 
   // Convert northing and easting to decimal degrees
-  val dfWithDD = inputDF
+  val latLongFormattedDF = inputDF
     .withColumn("northing_dd", dmsToDdUDF($"northing"))
     .withColumn("easting_dd", dmsToDdUDF($"easting"))
 
   // Filter blue and red coalitions
-  val dfBlue = dfWithDD.filter($"coalition" === "blue")
-  val dfRed = dfWithDD.filter($"coalition" === "red")
+  val bluforDF = latLongFormattedDF.filter($"coalition" === "blue")
+  val redforDF = latLongFormattedDF.filter($"coalition" === "red")
 
   // Create Cartesian product of blue and red DataFrames
-  val dfCartesian = dfBlue.crossJoin(dfRed)
+  val redBlueCrossJoinedDF = bluforDF.crossJoin(redforDF)
     .withColumn("distance", calculateDistanceUDF($"northing_dd", $"easting_dd", $"northing_dd", $"easting_dd"))
     .withColumn("bearing", calculateBearingUDF($"northing_dd", $"easting_dd", $"northing_dd", $"easting_dd"))
     .withColumn("altitude_differential", categorizeAltitudeDifferentialUDF($"altitude", $"altitude"))
@@ -132,10 +133,10 @@ object OlympusPanoptes extends App {
   val columnsToKeep = Seq(
     "coalition", "type", "callsign", "altitude", "heading", "distance", "bearing", "altitude_differential", "numerical_aspect", "aspect", "from_clean"
   )
-  val dfSelected = dfCartesian.select(columnsToKeep.head, columnsToKeep.tail: _*)
+  val lookupDF = redBlueCrossJoinedDF.select(columnsToKeep.head, columnsToKeep.tail: _*)
 
   // Write the output to a location
-  val query = dfSelected.writeStream
+  val query = lookupDF.writeStream
     .outputMode("append")
     .format("json")
     .option("path", "path/to/output")
