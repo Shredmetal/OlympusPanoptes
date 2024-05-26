@@ -30,18 +30,18 @@ def calculate_bearing(lat1, lon1, lat2, lon2):
     return compass_bearing
 
 
-# Function to categorize aspect
+# Function to categorise aspect
 def categorise_aspect(numerical_aspect):
-
-    match numerical_aspect:
-        case aspect if aspect <= 45 or aspect >= 315:
-            return "hot"
-        case aspect if 135 <= aspect <= 225:
-            return "cold"
-        case aspect if 45 < aspect < 135 or 225 < aspect < 315:
-            return "beaming"
-        case _:
-            return "unknown"
+    if numerical_aspect <= 30 or numerical_aspect >= 330:
+        return "hot"
+    elif 150 <= numerical_aspect <= 210:
+        return "cold"
+    elif 30 < numerical_aspect <= 90 or 270 <= numerical_aspect < 330:
+        return "beaming"
+    elif 90 < numerical_aspect < 150 or 210 < numerical_aspect < 270:
+        return "flanking"
+    else:
+        return "unknown"
 
 
 # Function to determine the correct word to say for altitude difference
